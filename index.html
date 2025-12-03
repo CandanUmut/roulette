@@ -353,8 +353,16 @@
       max-height: 120px;
       overflow-y: auto;
       align-self: stretch;
-      overscroll-behavior: contain;
+      overscroll-behavior: auto;
       -webkit-overflow-scrolling: touch;
+    }
+
+    #status-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: flex-end;
+      align-items: center;
     }
 
     .log-line {
@@ -904,8 +912,7 @@
       document.getElementById("help-line-4").textContent = t.helpLine4;
     }
 
-    updateRoomUI();
-    updateProbability();
+    scheduleUIUpdate();
   }
 
   // --- Ses (Web Audio) ---
@@ -1068,6 +1075,16 @@
   const probFillEl = document.getElementById("prob-fill");
   const muzzleFlashEl = document.getElementById("muzzle-flash");
   const cardEl = document.querySelector(".card");
+
+  let uiUpdatePending = false;
+  function scheduleUIUpdate() {
+    if (uiUpdatePending) return;
+    uiUpdatePending = true;
+    requestAnimationFrame(() => {
+      uiUpdatePending = false;
+      updateRoomUI();
+    });
+  }
 
   function updateProbability() {
     const t = textMap[currentLang];
@@ -1253,16 +1270,20 @@
     if (isCreator && currentGame.status !== "finished") {
       const addBotBtn = document.createElement("button");
       addBotBtn.className = "secondary";
-      addBotBtn.style.marginLeft = "8px";
       addBotBtn.textContent = "🤖 Bot";
       addBotBtn.onclick = addBot;
       statusActions.appendChild(addBotBtn);
     }
 
+    const scoreBtn = document.createElement("button");
+    scoreBtn.className = "secondary";
+    scoreBtn.textContent = textMap[currentLang].btnScoreboard;
+    scoreBtn.onclick = toggleScoreboard;
+    statusActions.appendChild(scoreBtn);
+
     // Sadece kurucu için start / tekrar oyna / yeni oda
     if (isCreator && currentGame.status === "waiting") {
       const btn = document.createElement("button");
-      btn.style.marginLeft = "8px";
       btn.textContent = t.btnStartGame;
       btn.onclick = startGame;
       statusActions.appendChild(btn);
@@ -1274,7 +1295,6 @@
 
       const newGame = document.createElement("button");
       newGame.className = "secondary";
-      newGame.style.marginLeft = "8px";
       newGame.textContent = t.btnNewRoom;
       newGame.onclick = () => {
         clearLocalState();
@@ -1282,13 +1302,6 @@
       };
       statusActions.appendChild(newGame);
     }
-
-    const scoreBtn = document.createElement("button");
-    scoreBtn.className = "secondary";
-    scoreBtn.style.marginLeft = "8px";
-    scoreBtn.textContent = textMap[currentLang].btnScoreboard;
-    scoreBtn.onclick = toggleScoreboard;
-    statusActions.appendChild(scoreBtn);
 
     // trigger / spin buttons
     const currentTurnPlayer = players.find(
@@ -1324,7 +1337,7 @@
         const me = players.find((p) => p.id === currentPlayer.id);
         if (me) currentPlayer = me;
       }
-      updateRoomUI();
+      scheduleUIUpdate();
     }
   }
 
@@ -1361,16 +1374,24 @@
   async function pollGameState() {
     if (!currentGame) return;
     const game = await fetchGameById(currentGame.id);
-    if (game) {
-      currentGame = game;
-      await fetchPlayers(game.id);
-      updateRoomUI();
+    if (!game) return;
+
+    if (currentGame?.updated_at && game?.updated_at) {
+      const incoming = new Date(game.updated_at).getTime();
+      const currentTime = new Date(currentGame.updated_at).getTime();
+      if (isFinite(incoming) && isFinite(currentTime) && incoming < currentTime) {
+        return;
+      }
     }
+
+    currentGame = game;
+    await fetchPlayers(game.id);
+    scheduleUIUpdate();
   }
 
   function startPolling() {
     if (pollInterval) clearInterval(pollInterval);
-    pollInterval = setInterval(pollGameState, 2000);
+    pollInterval = setInterval(pollGameState, 4500);
   }
 
   function stopPolling() {
@@ -1387,8 +1408,8 @@
         (payload) => {
           if (payload.new) {
             currentGame = payload.new;
-            updateRoomUI();
             fetchPlayers(gameId);
+            scheduleUIUpdate();
           }
         }
       )
@@ -1467,7 +1488,7 @@
     log(textMap[currentLang].logGameCreated(game.slug));
 
     saveLocalState();
-    updateRoomUI();
+    scheduleUIUpdate();
     attachRealtime(game.id);
     await fetchPlayers(game.id);
   }
@@ -1518,7 +1539,7 @@
     log(textMap[currentLang].logJoined(game.slug));
 
     saveLocalState();
-    updateRoomUI();
+    scheduleUIUpdate();
     attachRealtime(game.id);
     await fetchPlayers(game.id);
   }
@@ -1557,7 +1578,7 @@
     cylinderEl.classList.add("spin");
     playSpinSound();
     setTimeout(() => cylinderEl.classList.remove("spin"), 600);
-    updateRoomUI();
+    scheduleUIUpdate();
   }
 
   function getNextAlivePlayer(currentId) {
@@ -1584,10 +1605,12 @@
       return;
     }
 
+    await fetchPlayers(currentGame.id);
+
     if (currentGame.current_player_id === playerId && currentGame.status === "running") {
-      const remainingAlive = players.filter((p) => p.id !== playerId && p.is_alive);
+      const remainingAlive = players.filter((p) => p.is_alive);
       let nextId = null;
-      if (remainingAlive.length >= 1) {
+      if (remainingAlive.length >= 2) {
         const next = getNextAlivePlayer(playerId);
         nextId = next ? next.id : remainingAlive[0].id;
       }
@@ -1597,7 +1620,7 @@
       const { data: updatedGame, error: gError } = await supabase
         .from("rr_games")
         .update({
-          current_player_id: nextId,
+          current_player_id: statusUpdate === "running" ? nextId : null,
           status: statusUpdate,
         })
         .eq("id", currentGame.id)
@@ -1606,10 +1629,14 @@
 
       if (!gError && updatedGame) {
         currentGame = updatedGame;
+        scheduleUIUpdate();
+      } else if (gError) {
+        log("Kick failed: " + gError.message);
+        scheduleUIUpdate();
+        return;
       }
     }
 
-    await fetchPlayers(currentGame.id);
     log(
       currentLang === "tr"
         ? `${kicked.name} odadan atıldı.`
@@ -1705,6 +1732,9 @@
 
     if (!callerCanShoot) return;
 
+    triggerBtn.disabled = true;
+    spinBtn.disabled = true;
+
     cylinderEl.classList.add("spin");
     playSpinSound();
     setTimeout(() => cylinderEl.classList.remove("spin"), 600);
@@ -1751,8 +1781,11 @@
 
       if (!gError && updatedGame) {
         currentGame = updatedGame;
-        updateRoomUI();
+        scheduleUIUpdate();
         updateScoresAfterRound(shooter.id);
+      } else if (gError) {
+        log("Oyun güncellenemedi: " + gError.message);
+        scheduleUIUpdate();
       }
     } else {
       // Boş
@@ -1772,7 +1805,10 @@
 
       if (!error && updatedGame) {
         currentGame = updatedGame;
-        updateRoomUI();
+        scheduleUIUpdate();
+      } else if (error) {
+        log("Oyun güncellenemedi: " + error.message);
+        scheduleUIUpdate();
       }
     }
   }
@@ -1816,7 +1852,7 @@
 
     currentGame = updatedGame;
     log(textMap[currentLang].logReset);
-    updateRoomUI();
+    scheduleUIUpdate();
     await fetchPlayers(currentGame.id);
   }
 
@@ -1841,7 +1877,7 @@
     currentGame = data;
     log(textMap[currentLang].logEnded);
     clearLocalState();
-    updateRoomUI();
+    scheduleUIUpdate();
 
     setTimeout(() => {
       window.location.href = window.location.pathname;
@@ -1887,7 +1923,7 @@
     gameSection.style.display = "block";
     log(textMap[currentLang].logJoined(game.slug));
 
-    updateRoomUI();
+    scheduleUIUpdate();
     attachRealtime(game.id);
     await fetchPlayers(game.id);
   }
