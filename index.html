@@ -262,11 +262,17 @@
       justify-content: center;
       overflow: hidden;
       transform-origin: center center;
-      transition: transform 0.6s cubic-bezier(0.17, 0.67, 0.4, 1.4);
+      transition: transform 0.6s cubic-bezier(0.17, 0.67, 0.4, 1.4),
+        box-shadow 0.2s, background 0.2s;
     }
 
     .cylinder.spin {
       transform: rotate(720deg);
+    }
+
+    .cylinder.bang {
+      box-shadow: 0 0 40px rgba(248, 113, 113, 0.9);
+      background: radial-gradient(circle at 30% 30%, #991b1b, #020617 80%);
     }
 
     .cylinder-hole {
@@ -282,8 +288,9 @@
       font-size: 0.8rem;
     }
 
-    .cylinder-hole.bullet {
-      box-shadow: 0 0 12px rgba(248, 113, 113, 0.9) inset;
+    .cylinder-hole.current {
+      outline: 2px solid #facc15;
+      outline-offset: 2px;
     }
 
     .cylinder-core {
@@ -343,9 +350,10 @@
   <div class="card">
     <h1><span class="icon">🎯</span> Online Rus Ruleti</h1>
     <div class="subtitle">
-      Kur oda kodunu paylaş, herkes bağlansın. Silindir dönsün, kader konuşsun. Tamamen rastgele, tamamen eğlence.
+      Kur oda kodunu paylaş, herkes bağlansın. Silindir dönsün, kimse merminin nerede olduğunu bilmesin.
     </div>
 
+    <!-- Kurulum -->
     <div class="row" id="setup-section">
       <div class="col">
         <div class="section-title">Yeni Oyun Oluştur</div>
@@ -357,6 +365,10 @@
           <option value="6">6</option>
           <option value="7">7</option>
           <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="10">10</option>
+          <option value="11">11</option>
+          <option value="12">12</option>
         </select>
 
         <label style="margin-top:8px;">Mermi Sayısı</label>
@@ -391,6 +403,7 @@
       </div>
     </div>
 
+    <!-- Oyun ekranı -->
     <div id="game-section" style="display:none; margin-top:16px;">
       <div class="row">
         <div class="col">
@@ -416,9 +429,7 @@
         <div class="status-text" id="status-text">
           Oyun henüz başlamadı.
         </div>
-        <div id="status-actions">
-          <!-- Kurucuya "Oyunu Başlat" vb. gelecek -->
-        </div>
+        <div id="status-actions"></div>
       </div>
 
       <div class="gun-panel">
@@ -449,7 +460,75 @@
   const SUPABASE_URL = "https://tkggowekxmnlixwinszl.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrZ2dvd2VreG1ubGl4d2luc3psIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MzI1NjcsImV4cCI6MjA4MDMwODU2N30.y1GSvarl9YyBqMaP8x6SXeD88EJ10gjee4rlr6oLyZg";
 
+
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const LS_KEY = "rr_state_v1";
+
+  // --- Ses (Web Audio ile, dosyasız) ---
+  let audioCtx = null;
+  function getAudioCtx() {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) audioCtx = new AC();
+    }
+    return audioCtx;
+  }
+
+  function playClickSound() {
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "square";
+    osc.frequency.setValueAtTime(1200, ctx.currentTime);
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.1);
+  }
+
+  function playBangSound() {
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+
+    const length = ctx.sampleRate * 0.35; // 350ms
+    const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < length; i++) {
+      // white noise
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
+    }
+
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.8, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+
+    noise.connect(gain);
+    gain.connect(ctx.destination);
+    noise.start();
+  }
+
+  function playSpinSound() {
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(400, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.4);
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.45);
+  }
 
   // --- Helpers ---
   function randomSlug(len = 6) {
@@ -496,18 +575,31 @@
       const hole = document.createElement("div");
       hole.className = "cylinder-hole";
 
-      if (pattern[i] === "1") {
-        hole.classList.add("bullet");
-      }
-
+      // Mermi görünmüyor, sadece sıra yuvası işaretli
       if (i === currentIndex) {
-        hole.style.outline = "2px solid #facc15";
-        hole.style.outlineOffset = "2px";
+        hole.classList.add("current");
       }
 
       hole.style.transform = `translate(${x}px, ${y}px)`;
       cyl.appendChild(hole);
     }
+  }
+
+  function saveLocalState() {
+    if (!currentGame || !currentPlayer) return;
+    const payload = {
+      gameSlug: currentGame.slug,
+      playerId: currentPlayer.id,
+    };
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify(payload));
+    } catch (_) {}
+  }
+
+  function clearLocalState() {
+    try {
+      localStorage.removeItem(LS_KEY);
+    } catch (_) {}
   }
 
   // --- State ---
@@ -529,7 +621,6 @@
   const spinBtn = document.getElementById("spin-btn");
   const cylinderEl = document.getElementById("cylinder");
 
-  // --- UI state update ---
   function updateRoomUI() {
     if (!currentGame) return;
 
@@ -612,11 +703,20 @@
       btn.onclick = startGame;
       statusActions.appendChild(btn);
     } else if (currentGame.status === "finished" && isCreator) {
-      const btn = document.createElement("button");
-      btn.className = "secondary";
-      btn.textContent = "Yeni Oyun Oluştur";
-      btn.onclick = () => window.location.reload();
-      statusActions.appendChild(btn);
+      const again = document.createElement("button");
+      again.textContent = "Tekrar Oyna (Aynı Oda)";
+      again.onclick = restartGame;
+      statusActions.appendChild(again);
+
+      const newGame = document.createElement("button");
+      newGame.className = "secondary";
+      newGame.style.marginLeft = "8px";
+      newGame.textContent = "Yeni Oda Kur";
+      newGame.onclick = () => {
+        clearLocalState();
+        window.location.href = window.location.pathname;
+      };
+      statusActions.appendChild(newGame);
     }
 
     // trigger / spin buttons
@@ -632,33 +732,6 @@
     renderCylinder(currentGame.cylinder_pattern, currentGame.current_index);
   }
 
-  // --- Supabase interactions ---
-
-  async function attachRealtime(gameId) {
-    const channel = supabase
-      .channel("rr-game-" + gameId)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "rr_games", filter: `id=eq.${gameId}` },
-        (payload) => {
-          if (payload.new) {
-            currentGame = payload.new;
-            updateRoomUI();
-          }
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "rr_players", filter: `game_id=eq.${gameId}` },
-        (payload) => {
-          fetchPlayers(gameId);
-        }
-      )
-      .subscribe((status) => {
-        console.log("Realtime status:", status);
-      });
-  }
-
   async function fetchPlayers(gameId) {
     const { data, error } = await supabase
       .from("rr_players")
@@ -668,13 +741,59 @@
 
     if (!error) {
       players = data;
-      // kendi player kaydımızı güncelle
       if (currentPlayer) {
         const me = players.find((p) => p.id === currentPlayer.id);
         if (me) currentPlayer = me;
       }
       updateRoomUI();
     }
+  }
+
+  async function fetchGameBySlug(slug) {
+    const { data, error } = await supabase
+      .from("rr_games")
+      .select("*")
+      .eq("slug", slug)
+      .single();
+    if (error) return null;
+    return data;
+  }
+
+  async function fetchPlayerById(id) {
+    const { data, error } = await supabase
+      .from("rr_players")
+      .select("*")
+      .eq("id", id)
+      .single();
+    if (error) return null;
+    return data;
+  }
+
+  async function attachRealtime(gameId) {
+    supabase
+      .channel("rr-game-" + gameId)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "rr_games", filter: `id=eq.${gameId}` },
+        (payload) => {
+          if (payload.new) {
+            currentGame = payload.new;
+            updateRoomUI();
+            // ekstra emniyet: oyuncuları da güncelle
+            fetchPlayers(gameId);
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "rr_players", filter: `game_id=eq.${gameId}` },
+        () => {
+          fetchPlayers(gameId);
+        }
+      )
+      .subscribe((status) => {
+        console.log("Realtime status:", status);
+      });
   }
 
   async function createGame() {
@@ -711,7 +830,6 @@
       return;
     }
 
-    // oyuncu kaydı (kurucu)
     const { data: player, error: pError } = await supabase
       .from("rr_players")
       .insert({
@@ -736,6 +854,7 @@
     gameSection.style.display = "block";
     log("Oyun oluşturuldu. Kod: " + game.slug);
 
+    saveLocalState();
     updateRoomUI();
     attachRealtime(game.id);
     await fetchPlayers(game.id);
@@ -756,18 +875,12 @@
       return;
     }
 
-    const { data: game, error } = await supabase
-      .from("rr_games")
-      .select("*")
-      .eq("slug", code)
-      .single();
-
-    if (error || !game) {
+    const game = await fetchGameBySlug(code);
+    if (!game) {
       errEl.textContent = "Böyle bir oda bulunamadı.";
       return;
     }
 
-    // oyuncu ekle
     const { data: player, error: pError } = await supabase
       .from("rr_players")
       .insert({
@@ -783,7 +896,7 @@
       return;
     }
 
-    isCreator = false;
+    isCreator = !!player.is_creator;
     currentGame = game;
     currentPlayer = player;
 
@@ -791,6 +904,7 @@
     gameSection.style.display = "block";
     log("Odaya katıldın. Kod: " + game.slug);
 
+    saveLocalState();
     updateRoomUI();
     attachRealtime(game.id);
     await fetchPlayers(game.id);
@@ -798,11 +912,12 @@
 
   async function startGame() {
     if (!currentGame || !isCreator) return;
-    if (players.length < 2) {
-      log("En az 2 oyuncu olmalı.");
+    const alivePlayers = players.filter((p) => p.is_alive);
+    if (alivePlayers.length < 2) {
+      log("En az 2 canlı oyuncu olmalı.");
       return;
     }
-    const firstAlive = players.find((p) => p.is_alive);
+    const firstAlive = alivePlayers[0];
     if (!firstAlive) return;
 
     const { data, error } = await supabase
@@ -825,6 +940,7 @@
     currentGame = data;
     log("Oyun başladı. İlk oyuncu: " + firstAlive.name);
     cylinderEl.classList.add("spin");
+    playSpinSound();
     setTimeout(() => cylinderEl.classList.remove("spin"), 600);
     updateRoomUI();
   }
@@ -843,19 +959,22 @@
     if (currentGame.current_player_id !== currentPlayer.id) return;
     if (!currentPlayer.is_alive) return;
 
-    // küçük bir spin animasyonu
     cylinderEl.classList.add("spin");
+    playSpinSound();
     setTimeout(() => cylinderEl.classList.remove("spin"), 600);
 
     const pattern = currentGame.cylinder_pattern;
     const idx = currentGame.current_index;
     const hit = pattern && pattern[idx] === "1";
-
     const newIndex = idx + 1;
 
     if (hit) {
+      // BANG
+      playBangSound();
+      cylinderEl.classList.add("bang");
+      setTimeout(() => cylinderEl.classList.remove("bang"), 350);
       log("BANG! " + currentPlayer.name + " vuruldu.");
-      // oyuncuyu öldür + oyunu bitir
+
       const { error: pError } = await supabase
         .from("rr_players")
         .update({ is_alive: false })
@@ -881,8 +1000,11 @@
         updateRoomUI();
       }
     } else {
+      // Boş
+      playClickSound();
       log(currentPlayer.name + ": Boş! Kurtuldun.");
       const next = getNextAlivePlayer(currentPlayer.id);
+
       const { data: updatedGame, error } = await supabase
         .from("rr_games")
         .update({
@@ -900,22 +1022,106 @@
     }
   }
 
+  async function restartGame() {
+    if (!currentGame || !isCreator) return;
+
+    const pattern = createCylinderPattern(
+      currentGame.cylinder_size,
+      currentGame.bullet_count
+    );
+
+    // Tüm oyuncuları tekrar hayatta yap
+    const { error: pError } = await supabase
+      .from("rr_players")
+      .update({ is_alive: true })
+      .eq("game_id", currentGame.id);
+
+    if (pError) {
+      log("Oyuncular resetlenemedi: " + pError.message);
+      return;
+    }
+
+    const { data: updatedGame, error: gError } = await supabase
+      .from("rr_games")
+      .update({
+        status: "waiting",
+        cylinder_pattern: pattern,
+        current_index: 0,
+        current_player_id: null,
+        started_at: null,
+        ended_at: null,
+      })
+      .eq("id", currentGame.id)
+      .select()
+      .single();
+
+    if (gError) {
+      log("Oyun resetlenemedi: " + gError.message);
+      return;
+    }
+
+    currentGame = updatedGame;
+    log("Yeni tur için hazır. Oyuncular bekleniyor.");
+    updateRoomUI();
+    await fetchPlayers(currentGame.id);
+  }
+
+  async function autoRejoinIfPossible() {
+    // URL'de game param varsa join-code'u dolduralım
+    const params = new URLSearchParams(window.location.search);
+    const gameSlugParam = params.get("game");
+    if (gameSlugParam) {
+      document.getElementById("join-code").value = gameSlugParam.toUpperCase();
+    }
+
+    // local state varsa otomatik bağlanmayı dene
+    let saved = null;
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (raw) saved = JSON.parse(raw);
+    } catch (_) {}
+
+    if (!saved?.gameSlug || !saved?.playerId) return;
+
+    const game = await fetchGameBySlug(saved.gameSlug);
+    const player = await fetchPlayerById(saved.playerId);
+
+    if (!game || !player) {
+      clearLocalState();
+      return;
+    }
+
+    currentGame = game;
+    currentPlayer = player;
+    isCreator = !!player.is_creator;
+
+    setupSection.style.display = "none";
+    gameSection.style.display = "block";
+    log("Odaya yeniden bağlandın. Kod: " + game.slug);
+
+    updateRoomUI();
+    attachRealtime(game.id);
+    await fetchPlayers(game.id);
+  }
+
   // --- Event bindings ---
   document.getElementById("create-game-btn").onclick = createGame;
   document.getElementById("join-game-btn").onclick = joinGameByCode;
-  triggerBtn.onclick = pullTrigger;
+  triggerBtn.onclick = () => {
+    // ilk tıklamada ses için AudioContext aktivasyonu
+    getAudioCtx();
+    pullTrigger();
+  };
   spinBtn.onclick = () => {
+    getAudioCtx();
     cylinderEl.classList.add("spin");
+    playSpinSound();
     setTimeout(() => cylinderEl.classList.remove("spin"), 600);
     log("Silindir döndürüldü.");
   };
 
-  // URL'den game parametresi varsa join-code doldur
-  const params = new URLSearchParams(window.location.search);
-  const gameSlug = params.get("game");
-  if (gameSlug) {
-    document.getElementById("join-code").value = gameSlug.toUpperCase();
-  }
+  // Init
+  autoRejoinIfPossible();
 </script>
 </body>
 </html>
