@@ -40,6 +40,7 @@
     }
 
     .card {
+      position: relative;
       background: radial-gradient(circle at top, #020617, #020617 40%),
         var(--card);
       border-radius: var(--radius);
@@ -247,6 +248,7 @@
       flex-direction: column;
       align-items: center;
       gap: 14px;
+      position: relative;
     }
 
     .cylinder {
@@ -291,6 +293,7 @@
     .cylinder-hole.current {
       outline: 2px solid #facc15;
       outline-offset: 2px;
+      box-shadow: 0 0 12px rgba(250, 204, 21, 0.8);
     }
 
     .cylinder-core {
@@ -316,6 +319,7 @@
       color: var(--text-soft);
       max-height: 120px;
       overflow-y: auto;
+      align-self: stretch;
     }
 
     .log-line {
@@ -334,6 +338,63 @@
       word-break: break-all;
     }
 
+    /* Olasılık barı */
+    .prob-container {
+      position: absolute;
+      right: 8px;
+      bottom: 8px;
+      min-width: 210px;
+      max-width: 260px;
+      font-size: 0.75rem;
+      color: var(--text-soft);
+    }
+
+    .prob-label {
+      margin-bottom: 4px;
+    }
+
+    .prob-track {
+      width: 100%;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      overflow: hidden;
+    }
+
+    .prob-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(to right, #22c55e, #eab308, #ef4444);
+      transition: width 0.2s ease-out;
+    }
+
+    /* Dil seçici */
+    .lang-switch {
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      display: flex;
+      gap: 6px;
+    }
+
+    .lang-btn {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(75, 85, 99, 0.8);
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--text-soft);
+      cursor: pointer;
+    }
+
+    .lang-btn.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      box-shadow: 0 0 12px rgba(250, 204, 21, 0.35);
+    }
+
     @media (max-width: 768px) {
       .card {
         padding: 16px;
@@ -342,25 +403,39 @@
         width: 130px;
         height: 130px;
       }
+      .prob-container {
+        position: static;
+        margin-top: 8px;
+        width: 100%;
+      }
     }
   </style>
 </head>
 <body>
 <div class="app">
   <div class="card">
-    <h1><span class="icon">🎯</span> Online Rus Ruleti</h1>
-    <div class="subtitle">
+    <!-- Dil seçici -->
+    <div class="lang-switch">
+      <button class="lang-btn active" data-lang="tr">🇹🇷 TR</button>
+      <button class="lang-btn" data-lang="en">🇬🇧 EN</button>
+    </div>
+
+    <h1>
+      <span class="icon">🎯</span>
+      <span id="title-text">Online Rus Ruleti</span>
+    </h1>
+    <div class="subtitle" id="subtitle-text">
       Kur oda kodunu paylaş, herkes bağlansın. Silindir dönsün, kimse merminin nerede olduğunu bilmesin.
     </div>
 
     <!-- Kurulum -->
     <div class="row" id="setup-section">
       <div class="col">
-        <div class="section-title">Yeni Oyun Oluştur</div>
-        <label>İsmin</label>
+        <div class="section-title" id="create-section-title">Yeni Oyun Oluştur</div>
+        <label id="label-creator-name">İsmin</label>
         <input id="creator-name" placeholder="Umut, Nova, vs." />
 
-        <label style="margin-top:8px;">Şarjör Büyüklüğü (yuva sayısı)</label>
+        <label style="margin-top:8px;" id="label-cylinder-size">Şarjör Büyüklüğü (yuva sayısı)</label>
         <select id="cylinder-size">
           <option value="6">6</option>
           <option value="7">7</option>
@@ -371,7 +446,7 @@
           <option value="12">12</option>
         </select>
 
-        <label style="margin-top:8px;">Mermi Sayısı</label>
+        <label style="margin-top:8px;" id="label-bullet-count">Mermi Sayısı</label>
         <select id="bullet-count">
           <option value="1">1</option>
           <option value="2">2</option>
@@ -379,24 +454,24 @@
         </select>
 
         <button id="create-game-btn" style="margin-top:12px;">
-          <span>Oyun Oluştur</span> <span>➕</span>
+          <span id="btn-create-text">Oyun Oluştur</span> <span>➕</span>
         </button>
         <div id="create-error" class="error"></div>
       </div>
 
       <div class="col">
-        <div class="section-title">Koda / Linke Göre Katıl</div>
+        <div class="section-title" id="join-section-title">Koda / Linke Göre Katıl</div>
 
-        <label>İsmin</label>
+        <label id="label-join-name">İsmin</label>
         <input id="join-name" placeholder="İsmin" />
 
-        <label style="margin-top:8px;">Oda Kodu</label>
+        <label style="margin-top:8px;" id="label-join-code">Oda Kodu</label>
         <input id="join-code" placeholder="Örn: ABCD12" />
 
         <button id="join-game-btn" style="margin-top:12px;" class="secondary">
-          <span>Oyuna Katıl</span> <span>➡️</span>
+          <span id="btn-join-text">Oyuna Katıl</span> <span>➡️</span>
         </button>
-        <div style="margin-top:8px;font-size:0.8rem;color:var(--text-soft);">
+        <div id="join-help-text" style="margin-top:8px;font-size:0.8rem;color:var(--text-soft);">
           Eğer linkle geldiysen kod otomatik dolabilir.
         </div>
         <div id="join-error" class="error"></div>
@@ -407,20 +482,21 @@
     <div id="game-section" style="display:none; margin-top:16px;">
       <div class="row">
         <div class="col">
-          <div class="section-title">Oda</div>
+          <div class="section-title" id="room-section-title">Oda</div>
           <div class="pill" id="room-pill">
             <span class="pill-dot"></span>
             <span id="room-status-text">Bekleniyor...</span>
           </div>
           <div style="margin-top:8px;font-size:0.85rem;">
-            Oda kodu: <strong id="room-code">-</strong>
+            <span id="room-code-label">Oda kodu:</span> <strong id="room-code">-</strong>
           </div>
           <div style="margin-top:4px;font-size:0.8rem;">
-            Link: <a id="room-link" class="link" href="#"></a>
+            <span id="room-link-label">Link:</span>
+            <a id="room-link" class="link" href="#"></a>
           </div>
         </div>
         <div class="col">
-          <div class="section-title">Oyuncular</div>
+          <div class="section-title" id="players-section-title">Oyuncular</div>
           <div class="players" id="players-list"></div>
         </div>
       </div>
@@ -433,18 +509,28 @@
       </div>
 
       <div class="gun-panel">
-        <div class="section-title">Silindir</div>
+        <div class="section-title" id="cylinder-section-title">Silindir</div>
         <div class="cylinder" id="cylinder">
           <div class="cylinder-core"></div>
         </div>
 
         <div class="trigger-row">
           <button id="trigger-btn" disabled>
-            <span>🔫 Tetiği Çek</span>
+            <span id="btn-trigger-text">🔫 Tetiği Çek</span>
           </button>
           <button id="spin-btn" class="secondary" disabled>
-            <span>Silindiri Döndür</span>
+            <span id="btn-spin-text">Silindiri Döndür</span>
           </button>
+        </div>
+
+        <!-- Olasılık barı -->
+        <div class="prob-container">
+          <div class="prob-label" id="prob-label">
+            Sonraki atışta isabet ihtimali: —
+          </div>
+          <div class="prob-track">
+            <div class="prob-fill" id="prob-fill"></div>
+          </div>
         </div>
 
         <div class="log" id="log"></div>
@@ -460,10 +546,167 @@
   const SUPABASE_URL = "https://tkggowekxmnlixwinszl.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrZ2dvd2VreG1ubGl4d2luc3psIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MzI1NjcsImV4cCI6MjA4MDMwODU2N30.y1GSvarl9YyBqMaP8x6SXeD88EJ10gjee4rlr6oLyZg";
 
-
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  const LS_KEY = "rr_state_v1";
+  const LS_KEY = "rr_state_v2";
+  const LS_LANG = "rr_lang";
+
+  // --- Dil / i18n ---
+
+  let currentLang = (localStorage.getItem(LS_LANG) || "tr");
+
+  const textMap = {
+    tr: {
+      title: "Online Rus Ruleti",
+      subtitle: "Kur oda kodunu paylaş, herkes bağlansın. Silindir dönsün, kimse merminin nerede olduğunu bilmesin.",
+      createSectionTitle: "Yeni Oyun Oluştur",
+      joinSectionTitle: "Koda / Linke Göre Katıl",
+      labelCreatorName: "İsmin",
+      labelCylinderSize: "Şarjör Büyüklüğü (yuva sayısı)",
+      labelBulletCount: "Mermi Sayısı",
+      labelJoinName: "İsmin",
+      labelJoinCode: "Oda Kodu",
+      btnCreate: "Oyun Oluştur",
+      btnJoin: "Oyuna Katıl",
+      joinHelp: "Eğer linkle geldiysen kod otomatik dolabilir.",
+      roomSectionTitle: "Oda",
+      roomCodeLabel: "Oda kodu:",
+      roomLinkLabel: "Link:",
+      playersSectionTitle: "Oyuncular",
+      cylinderSectionTitle: "Silindir",
+      btnTrigger: "🔫 Tetiği Çek",
+      btnSpin: "Silindiri Döndür",
+      statusWaiting: "Oyun henüz başlamadı. Oyuncular girebilir.",
+      statusRunningPrefix: "Sıra:",
+      statusFinishedDead: (name) => `${name} BANG! Kaybetti.`,
+      statusFinishedGeneric: "BANG! Mermi patladı.",
+      errorNameRequired: "İsmini yazmalısın.",
+      errorCodeRequired: "Oda kodu boş olamaz.",
+      errorRoomNotFound: "Böyle bir oda bulunamadı.",
+      logGameCreated: (slug) => `Oyun oluşturuldu. Kod: ${slug}`,
+      logJoined: (slug) => `Odaya katıldın. Kod: ${slug}`,
+      logStart: (name) => `Oyun başladı. İlk oyuncu: ${name}`,
+      logNeedTwoPlayers: "En az 2 canlı oyuncu olmalı.",
+      logSpin: "Silindir döndürüldü.",
+      logHit: (name) => `BANG! ${name} gitti, ruhuna Fatiha.`,
+      logReset: "Yeni tur için hazır. Oyuncular bekleniyor.",
+      probPrefix: "Sonraki atışta isabet ihtimali:",
+      probUnknown: "—",
+      btnStartGame: "Oyunu Başlat",
+      btnPlayAgain: "Tekrar Oyna (Aynı Oda)",
+      btnNewRoom: "Yeni Oda Kur",
+    },
+    en: {
+      title: "Online Russian Roulette",
+      subtitle: "Create a room, share the code, let everyone join. Spin the cylinder, nobody knows where the bullet is.",
+      createSectionTitle: "Create New Game",
+      joinSectionTitle: "Join with Code / Link",
+      labelCreatorName: "Your name",
+      labelCylinderSize: "Cylinder Size (chambers)",
+      labelBulletCount: "Number of Bullets",
+      labelJoinName: "Your name",
+      labelJoinCode: "Room Code",
+      btnCreate: "Create Game",
+      btnJoin: "Join Game",
+      joinHelp: "If you came via link, the code may be filled automatically.",
+      roomSectionTitle: "Room",
+      roomCodeLabel: "Room code:",
+      roomLinkLabel: "Link:",
+      playersSectionTitle: "Players",
+      cylinderSectionTitle: "Cylinder",
+      btnTrigger: "🔫 Pull the Trigger",
+      btnSpin: "Spin Cylinder",
+      statusWaiting: "Game has not started yet. Players can still join.",
+      statusRunningPrefix: "Turn:",
+      statusFinishedDead: (name) => `${name} BANG! is out.`,
+      statusFinishedGeneric: "BANG! The bullet fired.",
+      errorNameRequired: "Please enter your name.",
+      errorCodeRequired: "Room code cannot be empty.",
+      errorRoomNotFound: "Room not found.",
+      logGameCreated: (slug) => `Game created. Code: ${slug}`,
+      logJoined: (slug) => `Joined room. Code: ${slug}`,
+      logStart: (name) => `Game started. First player: ${name}`,
+      logNeedTwoPlayers: "At least 2 alive players are required.",
+      logSpin: "Cylinder spun.",
+      logHit: (name) => `BANG! ${name} is gone.`,
+      logReset: "Ready for a new round. Waiting for players.",
+      probPrefix: "Chance to hit on next shot:",
+      probUnknown: "—",
+      btnStartGame: "Start Game",
+      btnPlayAgain: "Play Again (Same Room)",
+      btnNewRoom: "Create New Room",
+    },
+  };
+
+  const funMessages = {
+    tr: {
+      safe: [
+        (name) => `${name}: Boş çıktı, şimdilik hayat devam.`,
+        (name) => `${name}: Mermi seni sevmiş, yine de ıskaladı.`,
+        (name) => `${name}: Şanslı günündesin, kafan hala bir parça.`,
+        (name) => `${name}: Tık! Kalp gitti geldi ama sorun yok.`,
+        (name) => `${name}: Yine yırttın, Rabbine şükret 👍`,
+      ],
+      hit: [
+        (name) => `BANG! ${name} için lobby zamanı...`,
+        (name) => `BANG! ${name} disconnect oldu gibi düşünelim.`,
+        (name) => `BANG! ${name} istifa etti bu dünyadan.`,
+        (name) => `BANG! ${name} respawn ekranında şu an.`,
+      ],
+    },
+    en: {
+      safe: [
+        (name) => `${name}: Click! Still breathing, somehow.`,
+        (name) => `${name}: Bullet changed its mind at the last second.`,
+        (name) => `${name}: Lucky round, your head is still attached.`,
+        (name) => `${name}: Click! Heart stopped for a second, but you're good.`,
+        (name) => `${name}: You dodged that one. For now...`,
+      ],
+      hit: [
+        (name) => `BANG! ${name} just rage-quit life.`,
+        (name) => `BANG! ${name} has left the lobby.`,
+        (name) => `BANG! ${name} hit the respawn screen.`,
+        (name) => `BANG! ${name} took the full update package.`,
+      ],
+    },
+  };
+
+  function pickRandomMessage(type, name) {
+    const set = funMessages[currentLang][type];
+    const fn = set[Math.floor(Math.random() * set.length)];
+    return fn(name);
+  }
+
+  function applyLanguage() {
+    const t = textMap[currentLang];
+
+    document.getElementById("title-text").textContent = t.title;
+    document.getElementById("subtitle-text").textContent = t.subtitle;
+
+    document.getElementById("create-section-title").textContent = t.createSectionTitle;
+    document.getElementById("join-section-title").textContent = t.joinSectionTitle;
+    document.getElementById("label-creator-name").textContent = t.labelCreatorName;
+    document.getElementById("label-cylinder-size").textContent = t.labelCylinderSize;
+    document.getElementById("label-bullet-count").textContent = t.labelBulletCount;
+    document.getElementById("label-join-name").textContent = t.labelJoinName;
+    document.getElementById("label-join-code").textContent = t.labelJoinCode;
+
+    document.getElementById("btn-create-text").textContent = t.btnCreate;
+    document.getElementById("btn-join-text").textContent = t.btnJoin;
+    document.getElementById("join-help-text").textContent = t.joinHelp;
+
+    document.getElementById("room-section-title").textContent = t.roomSectionTitle;
+    document.getElementById("room-code-label").textContent = t.roomCodeLabel;
+    document.getElementById("room-link-label").textContent = t.roomLinkLabel;
+    document.getElementById("players-section-title").textContent = t.playersSectionTitle;
+    document.getElementById("cylinder-section-title").textContent = t.cylinderSectionTitle;
+
+    document.getElementById("btn-trigger-text").textContent = t.btnTrigger;
+    document.getElementById("btn-spin-text").textContent = t.btnSpin;
+
+    updateRoomUI();
+    updateProbability();
+  }
 
   // --- Ses (Web Audio ile, dosyasız) ---
   let audioCtx = null;
@@ -498,7 +741,6 @@
     const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
     const data = buffer.getChannelData(0);
     for (let i = 0; i < length; i++) {
-      // white noise
       data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
     }
 
@@ -559,7 +801,7 @@
     logEl.prepend(div);
   }
 
-  function renderCylinder(pattern, currentIndex) {
+  function renderCylinder(pattern) {
     const cyl = document.getElementById("cylinder");
     cyl.innerHTML = '<div class="cylinder-core"></div>';
 
@@ -575,8 +817,8 @@
       const hole = document.createElement("div");
       hole.className = "cylinder-hole";
 
-      // Mermi görünmüyor, sadece sıra yuvası işaretli
-      if (i === currentIndex) {
+      // Mermi görünmüyor, sadece ateşlenecek yuva (0. indeks) vurgulu
+      if (i === 0) {
         hole.classList.add("current");
       }
 
@@ -607,6 +849,7 @@
   let currentPlayer = null;
   let players = [];
   let isCreator = false;
+  let pollInterval = null;
 
   // --- DOM refs ---
   const setupSection = document.getElementById("setup-section");
@@ -620,19 +863,62 @@
   const triggerBtn = document.getElementById("trigger-btn");
   const spinBtn = document.getElementById("spin-btn");
   const cylinderEl = document.getElementById("cylinder");
+  const probLabelEl = document.getElementById("prob-label");
+  const probFillEl = document.getElementById("prob-fill");
+
+  function updateProbability() {
+    const t = textMap[currentLang];
+
+    if (!currentGame || currentGame.status !== "running") {
+      probLabelEl.textContent = `${t.probPrefix} ${t.probUnknown}`;
+      probFillEl.style.width = "0%";
+      return;
+    }
+
+    const pattern = currentGame.cylinder_pattern;
+    const idx = currentGame.current_index;
+    if (!pattern || typeof idx !== "number") {
+      probLabelEl.textContent = `${t.probPrefix} ${t.probUnknown}`;
+      probFillEl.style.width = "0%";
+      return;
+    }
+
+    const remaining = pattern.slice(idx);
+    const bulletsRemaining = (remaining.match(/1/g) || []).length;
+    const chambersRemaining = pattern.length - idx;
+
+    if (chambersRemaining <= 0) {
+      probLabelEl.textContent = `${t.probPrefix} ${t.probUnknown}`;
+      probFillEl.style.width = "0%";
+      return;
+    }
+
+    const prob = (bulletsRemaining / chambersRemaining) * 100;
+    const display = prob.toFixed(1);
+
+    if (currentLang === "tr") {
+      probLabelEl.textContent = `${t.probPrefix} %${display}`;
+    } else {
+      probLabelEl.textContent = `${t.probPrefix} ${display}%`;
+    }
+    probFillEl.style.width = `${Math.min(100, prob)}%`;
+  }
 
   function updateRoomUI() {
     if (!currentGame) return;
+    const t = textMap[currentLang];
 
     roomCodeEl.textContent = currentGame.slug;
     const link = `${window.location.origin}${window.location.pathname}?game=${currentGame.slug}`;
     roomLinkEl.href = link;
     roomLinkEl.textContent = link;
 
-    let statusLabel = "Bilinmiyor";
-    if (currentGame.status === "waiting") statusLabel = "Oyuncular bekleniyor";
-    if (currentGame.status === "running") statusLabel = "Oyun devam ediyor";
-    if (currentGame.status === "finished") statusLabel = "Oyun bitti";
+    let statusLabel = "…";
+    if (currentGame.status === "waiting") statusLabel = t.statusWaiting;
+    if (currentGame.status === "running") statusLabel =
+      currentLang === "tr" ? "Oyun devam ediyor" : "Game in progress";
+    if (currentGame.status === "finished") statusLabel =
+      currentLang === "tr" ? "Oyun bitti" : "Game over";
 
     roomStatusText.textContent = statusLabel;
 
@@ -657,7 +943,7 @@
       if (p.is_creator) {
         const creatorTag = document.createElement("span");
         creatorTag.className = "player-tag";
-        creatorTag.textContent = "Kurucu";
+        creatorTag.textContent = currentLang === "tr" ? "Kurucu" : "Host";
         right.appendChild(creatorTag);
       }
       if (currentGame.current_player_id === p.id && currentGame.status === "running") {
@@ -665,7 +951,7 @@
         turnTag.className = "player-tag";
         turnTag.style.borderColor = "#facc15";
         turnTag.style.color = "#facc15";
-        turnTag.textContent = "Sıra";
+        turnTag.textContent = currentLang === "tr" ? "Sıra" : "Turn";
         right.appendChild(turnTag);
       }
 
@@ -677,20 +963,22 @@
     // banner text
     let banner = "";
     if (currentGame.status === "waiting") {
-      banner = "Oyun henüz başlamadı. Oyuncular girebilir.";
+      banner = t.statusWaiting;
     } else if (currentGame.status === "running") {
       const current = players.find((p) => p.id === currentGame.current_player_id);
       if (current) {
-        banner = `Sıra: <strong>${current.name}</strong>`;
+        banner = `${t.statusRunningPrefix} <strong>${current.name}</strong>`;
       } else {
-        banner = "Sıra bilgisi hazırlanıyor...";
+        banner = currentLang === "tr"
+          ? "Sıra bilgisi hazırlanıyor..."
+          : "Turn info is loading...";
       }
     } else if (currentGame.status === "finished") {
       const dead = players.find((p) => !p.is_alive);
       if (dead) {
-        banner = `<span class="status-danger">${dead.name} BANG! Kaybetti.</span>`;
+        banner = `<span class="status-danger">${textMap[currentLang].statusFinishedDead(dead.name)}</span>`;
       } else {
-        banner = '<span class="status-danger">BANG! Mermi patladı.</span>';
+        banner = `<span class="status-danger">${textMap[currentLang].statusFinishedGeneric}</span>`;
       }
     }
     statusText.innerHTML = banner;
@@ -699,19 +987,19 @@
     statusActions.innerHTML = "";
     if (isCreator && currentGame.status === "waiting") {
       const btn = document.createElement("button");
-      btn.textContent = "Oyunu Başlat";
+      btn.textContent = t.btnStartGame;
       btn.onclick = startGame;
       statusActions.appendChild(btn);
     } else if (currentGame.status === "finished" && isCreator) {
       const again = document.createElement("button");
-      again.textContent = "Tekrar Oyna (Aynı Oda)";
+      again.textContent = t.btnPlayAgain;
       again.onclick = restartGame;
       statusActions.appendChild(again);
 
       const newGame = document.createElement("button");
       newGame.className = "secondary";
       newGame.style.marginLeft = "8px";
-      newGame.textContent = "Yeni Oda Kur";
+      newGame.textContent = t.btnNewRoom;
       newGame.onclick = () => {
         clearLocalState();
         window.location.href = window.location.pathname;
@@ -728,8 +1016,9 @@
     triggerBtn.disabled = !myTurn;
     spinBtn.disabled = !myTurn;
 
-    // cylinder
-    renderCylinder(currentGame.cylinder_pattern, currentGame.current_index);
+    // cylinder (mermi görünmüyor, sadece ateşlenecek yuva işaretli)
+    renderCylinder(currentGame.cylinder_pattern);
+    updateProbability();
   }
 
   async function fetchPlayers(gameId) {
@@ -759,6 +1048,16 @@
     return data;
   }
 
+  async function fetchGameById(id) {
+    const { data, error } = await supabase
+      .from("rr_games")
+      .select("*")
+      .eq("id", id)
+      .single();
+    if (error) return null;
+    return data;
+  }
+
   async function fetchPlayerById(id) {
     const { data, error } = await supabase
       .from("rr_players")
@@ -767,6 +1066,26 @@
       .single();
     if (error) return null;
     return data;
+  }
+
+  async function pollGameState() {
+    if (!currentGame) return;
+    const game = await fetchGameById(currentGame.id);
+    if (game) {
+      currentGame = game;
+      await fetchPlayers(game.id);
+      updateRoomUI();
+    }
+  }
+
+  function startPolling() {
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(pollGameState, 2000);
+  }
+
+  function stopPolling() {
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = null;
   }
 
   async function attachRealtime(gameId) {
@@ -779,7 +1098,6 @@
           if (payload.new) {
             currentGame = payload.new;
             updateRoomUI();
-            // ekstra emniyet: oyuncuları da güncelle
             fetchPlayers(gameId);
           }
         }
@@ -794,9 +1112,13 @@
       .subscribe((status) => {
         console.log("Realtime status:", status);
       });
+
+    // Realtime çalışmasa bile polling backup
+    startPolling();
   }
 
   async function createGame() {
+    const t = textMap[currentLang];
     const name = document.getElementById("creator-name").value.trim();
     const cyl = document.getElementById("cylinder-size").value;
     const bullets = document.getElementById("bullet-count").value;
@@ -804,7 +1126,7 @@
     errEl.textContent = "";
 
     if (!name) {
-      errEl.textContent = "İsmini yazmalısın.";
+      errEl.textContent = t.errorNameRequired;
       return;
     }
 
@@ -852,7 +1174,7 @@
 
     setupSection.style.display = "none";
     gameSection.style.display = "block";
-    log("Oyun oluşturuldu. Kod: " + game.slug);
+    log(textMap[currentLang].logGameCreated(game.slug));
 
     saveLocalState();
     updateRoomUI();
@@ -861,23 +1183,24 @@
   }
 
   async function joinGameByCode() {
+    const t = textMap[currentLang];
     const name = document.getElementById("join-name").value.trim();
     const code = document.getElementById("join-code").value.trim().toUpperCase();
     const errEl = document.getElementById("join-error");
     errEl.textContent = "";
 
     if (!name) {
-      errEl.textContent = "İsmini yazmalısın.";
+      errEl.textContent = t.errorNameRequired;
       return;
     }
     if (!code) {
-      errEl.textContent = "Oda kodu boş olamaz.";
+      errEl.textContent = t.errorCodeRequired;
       return;
     }
 
     const game = await fetchGameBySlug(code);
     if (!game) {
-      errEl.textContent = "Böyle bir oda bulunamadı.";
+      errEl.textContent = t.errorRoomNotFound;
       return;
     }
 
@@ -902,7 +1225,7 @@
 
     setupSection.style.display = "none";
     gameSection.style.display = "block";
-    log("Odaya katıldın. Kod: " + game.slug);
+    log(textMap[currentLang].logJoined(game.slug));
 
     saveLocalState();
     updateRoomUI();
@@ -912,9 +1235,11 @@
 
   async function startGame() {
     if (!currentGame || !isCreator) return;
+    const t = textMap[currentLang];
+
     const alivePlayers = players.filter((p) => p.is_alive);
     if (alivePlayers.length < 2) {
-      log("En az 2 canlı oyuncu olmalı.");
+      log(t.logNeedTwoPlayers);
       return;
     }
     const firstAlive = alivePlayers[0];
@@ -938,7 +1263,7 @@
     }
 
     currentGame = data;
-    log("Oyun başladı. İlk oyuncu: " + firstAlive.name);
+    log(textMap[currentLang].logStart(firstAlive.name));
     cylinderEl.classList.add("spin");
     playSpinSound();
     setTimeout(() => cylinderEl.classList.remove("spin"), 600);
@@ -959,6 +1284,8 @@
     if (currentGame.current_player_id !== currentPlayer.id) return;
     if (!currentPlayer.is_alive) return;
 
+    const t = textMap[currentLang];
+
     cylinderEl.classList.add("spin");
     playSpinSound();
     setTimeout(() => cylinderEl.classList.remove("spin"), 600);
@@ -973,7 +1300,7 @@
       playBangSound();
       cylinderEl.classList.add("bang");
       setTimeout(() => cylinderEl.classList.remove("bang"), 350);
-      log("BANG! " + currentPlayer.name + " vuruldu.");
+      log(pickRandomMessage("hit", currentPlayer.name));
 
       const { error: pError } = await supabase
         .from("rr_players")
@@ -1002,7 +1329,7 @@
     } else {
       // Boş
       playClickSound();
-      log(currentPlayer.name + ": Boş! Kurtuldun.");
+      log(pickRandomMessage("safe", currentPlayer.name));
       const next = getNextAlivePlayer(currentPlayer.id);
 
       const { data: updatedGame, error } = await supabase
@@ -1030,7 +1357,6 @@
       currentGame.bullet_count
     );
 
-    // Tüm oyuncuları tekrar hayatta yap
     const { error: pError } = await supabase
       .from("rr_players")
       .update({ is_alive: true })
@@ -1061,7 +1387,7 @@
     }
 
     currentGame = updatedGame;
-    log("Yeni tur için hazır. Oyuncular bekleniyor.");
+    log(textMap[currentLang].logReset);
     updateRoomUI();
     await fetchPlayers(currentGame.id);
   }
@@ -1097,7 +1423,7 @@
 
     setupSection.style.display = "none";
     gameSection.style.display = "block";
-    log("Odaya yeniden bağlandın. Kod: " + game.slug);
+    log(textMap[currentLang].logJoined(game.slug));
 
     updateRoomUI();
     attachRealtime(game.id);
@@ -1108,8 +1434,7 @@
   document.getElementById("create-game-btn").onclick = createGame;
   document.getElementById("join-game-btn").onclick = joinGameByCode;
   triggerBtn.onclick = () => {
-    // ilk tıklamada ses için AudioContext aktivasyonu
-    getAudioCtx();
+    getAudioCtx(); // ilk tıklamada AudioContext aktif olsun
     pullTrigger();
   };
   spinBtn.onclick = () => {
@@ -1117,10 +1442,26 @@
     cylinderEl.classList.add("spin");
     playSpinSound();
     setTimeout(() => cylinderEl.classList.remove("spin"), 600);
-    log("Silindir döndürüldü.");
+    log(textMap[currentLang].logSpin);
   };
 
+  // Dil butonları
+  const langButtons = document.querySelectorAll(".lang-btn");
+  langButtons.forEach((btn) => {
+    const lang = btn.dataset.lang;
+    if (lang === currentLang) btn.classList.add("active");
+    btn.addEventListener("click", () => {
+      currentLang = lang;
+      localStorage.setItem(LS_LANG, currentLang);
+      langButtons.forEach((b) =>
+        b.classList.toggle("active", b.dataset.lang === currentLang)
+      );
+      applyLanguage();
+    });
+  });
+
   // Init
+  applyLanguage();
   autoRejoinIfPossible();
 </script>
 </body>
