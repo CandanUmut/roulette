@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Online Rus Ruleti</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #020617;
+      --panel: #020617;
+      --card: #0f172a;
+      --accent: #facc15;
+      --accent-soft: rgba(250, 204, 21, 0.15);
+      --danger: #f87171;
+      --text: #e5e7eb;
+      --text-soft: #9ca3af;
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        sans-serif;
+      background: radial-gradient(circle at top, #0b1120, #020617 55%);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      min-height: 100vh;
+    }
+
+    .app {
+      max-width: 960px;
+      width: 100%;
+      padding: 24px 16px 32px;
+    }
+
+    .card {
+      background: radial-gradient(circle at top, #020617, #020617 40%),
+        var(--card);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(75, 85, 99, 0.4);
+      backdrop-filter: blur(24px);
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    h1 span.icon {
+      font-size: 2.2rem;
+    }
+
+    .subtitle {
+      color: var(--text-soft);
+      margin-bottom: 12px;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .col {
+      flex: 1 1 260px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-soft);
+      margin-bottom: 4px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid #1f2937;
+      background: #020617;
+      color: var(--text);
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.3);
+    }
+
+    button {
+      border-radius: 999px;
+      border: none;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(to right, #fde047, #f97316);
+      color: #1f2937;
+      box-shadow: 0 8px 25px rgba(234, 179, 8, 0.45);
+      transition: transform 0.1s, box-shadow 0.1s, filter 0.15s;
+    }
+
+    button.secondary {
+      background: transparent;
+      border: 1px solid #4b5563;
+      color: var(--text-soft);
+      box-shadow: none;
+    }
+
+    button:active {
+      transform: translateY(1px) scale(0.99);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    }
+
+    button[disabled] {
+      opacity: 0.5;
+      cursor: default;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .section-title {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-soft);
+      margin-bottom: 8px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      border: 1px solid rgba(75, 85, 99, 0.7);
+      color: var(--text-soft);
+    }
+
+    .pill-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 8px rgba(34, 197, 94, 0.7);
+    }
+
+    .pill-dot.red {
+      background: #f97373;
+      box-shadow: 0 0 8px rgba(248, 113, 113, 0.7);
+    }
+
+    .players {
+      border-radius: 12px;
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      background: rgba(15, 23, 42, 0.95);
+      padding: 10px 12px;
+      max-height: 220px;
+      overflow-y: auto;
+      font-size: 0.85rem;
+    }
+
+    .player-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+      border-bottom: 1px dashed rgba(31, 41, 55, 0.7);
+    }
+
+    .player-row:last-child {
+      border-bottom: none;
+    }
+
+    .player-name {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .player-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #22c55e;
+    }
+
+    .player-dot.dead {
+      background: #4b5563;
+    }
+
+    .player-tag {
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      color: #9ca3af;
+    }
+
+    .status-banner {
+      margin-top: 16px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: radial-gradient(circle at left, rgba(250, 204, 21, 0.12), transparent),
+        rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(75, 85, 99, 0.8);
+    }
+
+    .status-text strong {
+      color: var(--accent);
+    }
+
+    .status-danger {
+      color: var(--danger);
+      font-weight: 600;
+    }
+
+    /* Silindir alanı */
+    .gun-panel {
+      margin-top: 18px;
+      border-radius: 16px;
+      padding: 16px;
+      border: 1px solid rgba(31, 41, 55, 0.9);
+      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.9), #020617);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .cylinder {
+      position: relative;
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #4b5563, #020617 70%);
+      border: 4px solid #111827;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      transform-origin: center center;
+      transition: transform 0.6s cubic-bezier(0.17, 0.67, 0.4, 1.4);
+    }
+
+    .cylinder.spin {
+      transform: rotate(720deg);
+    }
+
+    .cylinder-hole {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #020617, #020617 60%, #111827 100%);
+      border: 2px solid #111827;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+    }
+
+    .cylinder-hole.bullet {
+      box-shadow: 0 0 12px rgba(248, 113, 113, 0.9) inset;
+    }
+
+    .cylinder-core {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #020617, #111827);
+      border: 3px solid #0b1120;
+      box-shadow: 0 0 0 4px #020617, inset 0 8px 15px rgba(0, 0, 0, 0.8);
+    }
+
+    .trigger-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .log {
+      margin-top: 12px;
+      font-size: 0.8rem;
+      color: var(--text-soft);
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    .log-line {
+      margin-bottom: 4px;
+    }
+
+    .error {
+      color: var(--danger);
+      font-size: 0.8rem;
+      margin-top: 6px;
+    }
+
+    a.link {
+      color: var(--accent);
+      font-size: 0.85rem;
+      word-break: break-all;
+    }
+
+    @media (max-width: 768px) {
+      .card {
+        padding: 16px;
+      }
+      .cylinder {
+        width: 130px;
+        height: 130px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="card">
+    <h1><span class="icon">🎯</span> Online Rus Ruleti</h1>
+    <div class="subtitle">
+      Kur oda kodunu paylaş, herkes bağlansın. Silindir dönsün, kader konuşsun. Tamamen rastgele, tamamen eğlence.
+    </div>
+
+    <div class="row" id="setup-section">
+      <div class="col">
+        <div class="section-title">Yeni Oyun Oluştur</div>
+        <label>İsmin</label>
+        <input id="creator-name" placeholder="Umut, Nova, vs." />
+
+        <label style="margin-top:8px;">Şarjör Büyüklüğü (yuva sayısı)</label>
+        <select id="cylinder-size">
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+        </select>
+
+        <label style="margin-top:8px;">Mermi Sayısı</label>
+        <select id="bullet-count">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+        </select>
+
+        <button id="create-game-btn" style="margin-top:12px;">
+          <span>Oyun Oluştur</span> <span>➕</span>
+        </button>
+        <div id="create-error" class="error"></div>
+      </div>
+
+      <div class="col">
+        <div class="section-title">Koda / Linke Göre Katıl</div>
+
+        <label>İsmin</label>
+        <input id="join-name" placeholder="İsmin" />
+
+        <label style="margin-top:8px;">Oda Kodu</label>
+        <input id="join-code" placeholder="Örn: ABCD12" />
+
+        <button id="join-game-btn" style="margin-top:12px;" class="secondary">
+          <span>Oyuna Katıl</span> <span>➡️</span>
+        </button>
+        <div style="margin-top:8px;font-size:0.8rem;color:var(--text-soft);">
+          Eğer linkle geldiysen kod otomatik dolabilir.
+        </div>
+        <div id="join-error" class="error"></div>
+      </div>
+    </div>
+
+    <div id="game-section" style="display:none; margin-top:16px;">
+      <div class="row">
+        <div class="col">
+          <div class="section-title">Oda</div>
+          <div class="pill" id="room-pill">
+            <span class="pill-dot"></span>
+            <span id="room-status-text">Bekleniyor...</span>
+          </div>
+          <div style="margin-top:8px;font-size:0.85rem;">
+            Oda kodu: <strong id="room-code">-</strong>
+          </div>
+          <div style="margin-top:4px;font-size:0.8rem;">
+            Link: <a id="room-link" class="link" href="#"></a>
+          </div>
+        </div>
+        <div class="col">
+          <div class="section-title">Oyuncular</div>
+          <div class="players" id="players-list"></div>
+        </div>
+      </div>
+
+      <div class="status-banner" id="status-banner">
+        <div class="status-text" id="status-text">
+          Oyun henüz başlamadı.
+        </div>
+        <div id="status-actions">
+          <!-- Kurucuya "Oyunu Başlat" vb. gelecek -->
+        </div>
+      </div>
+
+      <div class="gun-panel">
+        <div class="section-title">Silindir</div>
+        <div class="cylinder" id="cylinder">
+          <div class="cylinder-core"></div>
+        </div>
+
+        <div class="trigger-row">
+          <button id="trigger-btn" disabled>
+            <span>🔫 Tetiği Çek</span>
+          </button>
+          <button id="spin-btn" class="secondary" disabled>
+            <span>Silindiri Döndür</span>
+          </button>
+        </div>
+
+        <div class="log" id="log"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+  // TODO: KENDİ PROJE BİLGİLERİNİ YAZ
+  const SUPABASE_URL = "https://tkggowekxmnlixwinszl.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrZ2dvd2VreG1ubGl4d2luc3psIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MzI1NjcsImV4cCI6MjA4MDMwODU2N30.y1GSvarl9YyBqMaP8x6SXeD88EJ10gjee4rlr6oLyZg";
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // --- Helpers ---
+  function randomSlug(len = 6) {
+    return Math.random().toString(36).substring(2, 2 + len).toUpperCase();
+  }
+
+  function createCylinderPattern(cylinderSize, bulletCount) {
+    const size = Number(cylinderSize);
+    const bullets = Number(bulletCount);
+    const pattern = Array(size).fill(0);
+    let placed = 0;
+    while (placed < bullets) {
+      const idx = Math.floor(Math.random() * size);
+      if (pattern[idx] === 0) {
+        pattern[idx] = 1;
+        placed++;
+      }
+    }
+    return pattern.join("");
+  }
+
+  function log(message) {
+    const logEl = document.getElementById("log");
+    const div = document.createElement("div");
+    div.className = "log-line";
+    const time = new Date().toLocaleTimeString();
+    div.textContent = `[${time}] ${message}`;
+    logEl.prepend(div);
+  }
+
+  function renderCylinder(pattern, currentIndex) {
+    const cyl = document.getElementById("cylinder");
+    cyl.innerHTML = '<div class="cylinder-core"></div>';
+
+    if (!pattern) return;
+
+    const size = pattern.length;
+    const radius = 55;
+    for (let i = 0; i < size; i++) {
+      const angle = (2 * Math.PI * i) / size - Math.PI / 2;
+      const x = Math.cos(angle) * radius;
+      const y = Math.sin(angle) * radius;
+
+      const hole = document.createElement("div");
+      hole.className = "cylinder-hole";
+
+      if (pattern[i] === "1") {
+        hole.classList.add("bullet");
+      }
+
+      if (i === currentIndex) {
+        hole.style.outline = "2px solid #facc15";
+        hole.style.outlineOffset = "2px";
+      }
+
+      hole.style.transform = `translate(${x}px, ${y}px)`;
+      cyl.appendChild(hole);
+    }
+  }
+
+  // --- State ---
+  let currentGame = null;
+  let currentPlayer = null;
+  let players = [];
+  let isCreator = false;
+
+  // --- DOM refs ---
+  const setupSection = document.getElementById("setup-section");
+  const gameSection = document.getElementById("game-section");
+  const roomCodeEl = document.getElementById("room-code");
+  const roomLinkEl = document.getElementById("room-link");
+  const roomStatusText = document.getElementById("room-status-text");
+  const playersList = document.getElementById("players-list");
+  const statusText = document.getElementById("status-text");
+  const statusActions = document.getElementById("status-actions");
+  const triggerBtn = document.getElementById("trigger-btn");
+  const spinBtn = document.getElementById("spin-btn");
+  const cylinderEl = document.getElementById("cylinder");
+
+  // --- UI state update ---
+  function updateRoomUI() {
+    if (!currentGame) return;
+
+    roomCodeEl.textContent = currentGame.slug;
+    const link = `${window.location.origin}${window.location.pathname}?game=${currentGame.slug}`;
+    roomLinkEl.href = link;
+    roomLinkEl.textContent = link;
+
+    let statusLabel = "Bilinmiyor";
+    if (currentGame.status === "waiting") statusLabel = "Oyuncular bekleniyor";
+    if (currentGame.status === "running") statusLabel = "Oyun devam ediyor";
+    if (currentGame.status === "finished") statusLabel = "Oyun bitti";
+
+    roomStatusText.textContent = statusLabel;
+
+    // players list
+    playersList.innerHTML = "";
+    players.forEach((p) => {
+      const row = document.createElement("div");
+      row.className = "player-row";
+      const left = document.createElement("div");
+      left.className = "player-name";
+
+      const dot = document.createElement("div");
+      dot.className = "player-dot";
+      if (!p.is_alive) dot.classList.add("dead");
+
+      left.appendChild(dot);
+      const nameSpan = document.createElement("span");
+      nameSpan.textContent = p.name;
+      left.appendChild(nameSpan);
+
+      const right = document.createElement("div");
+      if (p.is_creator) {
+        const creatorTag = document.createElement("span");
+        creatorTag.className = "player-tag";
+        creatorTag.textContent = "Kurucu";
+        right.appendChild(creatorTag);
+      }
+      if (currentGame.current_player_id === p.id && currentGame.status === "running") {
+        const turnTag = document.createElement("span");
+        turnTag.className = "player-tag";
+        turnTag.style.borderColor = "#facc15";
+        turnTag.style.color = "#facc15";
+        turnTag.textContent = "Sıra";
+        right.appendChild(turnTag);
+      }
+
+      row.appendChild(left);
+      row.appendChild(right);
+      playersList.appendChild(row);
+    });
+
+    // banner text
+    let banner = "";
+    if (currentGame.status === "waiting") {
+      banner = "Oyun henüz başlamadı. Oyuncular girebilir.";
+    } else if (currentGame.status === "running") {
+      const current = players.find((p) => p.id === currentGame.current_player_id);
+      if (current) {
+        banner = `Sıra: <strong>${current.name}</strong>`;
+      } else {
+        banner = "Sıra bilgisi hazırlanıyor...";
+      }
+    } else if (currentGame.status === "finished") {
+      const dead = players.find((p) => !p.is_alive);
+      if (dead) {
+        banner = `<span class="status-danger">${dead.name} BANG! Kaybetti.</span>`;
+      } else {
+        banner = '<span class="status-danger">BANG! Mermi patladı.</span>';
+      }
+    }
+    statusText.innerHTML = banner;
+
+    // status actions
+    statusActions.innerHTML = "";
+    if (isCreator && currentGame.status === "waiting") {
+      const btn = document.createElement("button");
+      btn.textContent = "Oyunu Başlat";
+      btn.onclick = startGame;
+      statusActions.appendChild(btn);
+    } else if (currentGame.status === "finished" && isCreator) {
+      const btn = document.createElement("button");
+      btn.className = "secondary";
+      btn.textContent = "Yeni Oyun Oluştur";
+      btn.onclick = () => window.location.reload();
+      statusActions.appendChild(btn);
+    }
+
+    // trigger / spin buttons
+    const myTurn =
+      currentGame.status === "running" &&
+      currentGame.current_player_id === currentPlayer?.id &&
+      currentPlayer?.is_alive;
+
+    triggerBtn.disabled = !myTurn;
+    spinBtn.disabled = !myTurn;
+
+    // cylinder
+    renderCylinder(currentGame.cylinder_pattern, currentGame.current_index);
+  }
+
+  // --- Supabase interactions ---
+
+  async function attachRealtime(gameId) {
+    const channel = supabase
+      .channel("rr-game-" + gameId)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "rr_games", filter: `id=eq.${gameId}` },
+        (payload) => {
+          if (payload.new) {
+            currentGame = payload.new;
+            updateRoomUI();
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "rr_players", filter: `game_id=eq.${gameId}` },
+        (payload) => {
+          fetchPlayers(gameId);
+        }
+      )
+      .subscribe((status) => {
+        console.log("Realtime status:", status);
+      });
+  }
+
+  async function fetchPlayers(gameId) {
+    const { data, error } = await supabase
+      .from("rr_players")
+      .select("*")
+      .eq("game_id", gameId)
+      .order("created_at", { ascending: true });
+
+    if (!error) {
+      players = data;
+      // kendi player kaydımızı güncelle
+      if (currentPlayer) {
+        const me = players.find((p) => p.id === currentPlayer.id);
+        if (me) currentPlayer = me;
+      }
+      updateRoomUI();
+    }
+  }
+
+  async function createGame() {
+    const name = document.getElementById("creator-name").value.trim();
+    const cyl = document.getElementById("cylinder-size").value;
+    const bullets = document.getElementById("bullet-count").value;
+    const errEl = document.getElementById("create-error");
+    errEl.textContent = "";
+
+    if (!name) {
+      errEl.textContent = "İsmini yazmalısın.";
+      return;
+    }
+
+    const pattern = createCylinderPattern(cyl, bullets);
+    const slug = randomSlug();
+
+    const { data: game, error } = await supabase
+      .from("rr_games")
+      .insert({
+        slug,
+        cylinder_size: Number(cyl),
+        bullet_count: Number(bullets),
+        cylinder_pattern: pattern,
+        status: "waiting",
+        creator_name: name,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error(error);
+      errEl.textContent = "Oyun oluşturulamadı: " + error.message;
+      return;
+    }
+
+    // oyuncu kaydı (kurucu)
+    const { data: player, error: pError } = await supabase
+      .from("rr_players")
+      .insert({
+        game_id: game.id,
+        name,
+        is_creator: true,
+      })
+      .select()
+      .single();
+
+    if (pError) {
+      console.error(pError);
+      errEl.textContent = "Oyuncu eklenemedi: " + pError.message;
+      return;
+    }
+
+    isCreator = true;
+    currentGame = game;
+    currentPlayer = player;
+
+    setupSection.style.display = "none";
+    gameSection.style.display = "block";
+    log("Oyun oluşturuldu. Kod: " + game.slug);
+
+    updateRoomUI();
+    attachRealtime(game.id);
+    await fetchPlayers(game.id);
+  }
+
+  async function joinGameByCode() {
+    const name = document.getElementById("join-name").value.trim();
+    const code = document.getElementById("join-code").value.trim().toUpperCase();
+    const errEl = document.getElementById("join-error");
+    errEl.textContent = "";
+
+    if (!name) {
+      errEl.textContent = "İsmini yazmalısın.";
+      return;
+    }
+    if (!code) {
+      errEl.textContent = "Oda kodu boş olamaz.";
+      return;
+    }
+
+    const { data: game, error } = await supabase
+      .from("rr_games")
+      .select("*")
+      .eq("slug", code)
+      .single();
+
+    if (error || !game) {
+      errEl.textContent = "Böyle bir oda bulunamadı.";
+      return;
+    }
+
+    // oyuncu ekle
+    const { data: player, error: pError } = await supabase
+      .from("rr_players")
+      .insert({
+        game_id: game.id,
+        name,
+        is_creator: false,
+      })
+      .select()
+      .single();
+
+    if (pError) {
+      errEl.textContent = "Oyuncu eklenemedi: " + pError.message;
+      return;
+    }
+
+    isCreator = false;
+    currentGame = game;
+    currentPlayer = player;
+
+    setupSection.style.display = "none";
+    gameSection.style.display = "block";
+    log("Odaya katıldın. Kod: " + game.slug);
+
+    updateRoomUI();
+    attachRealtime(game.id);
+    await fetchPlayers(game.id);
+  }
+
+  async function startGame() {
+    if (!currentGame || !isCreator) return;
+    if (players.length < 2) {
+      log("En az 2 oyuncu olmalı.");
+      return;
+    }
+    const firstAlive = players.find((p) => p.is_alive);
+    if (!firstAlive) return;
+
+    const { data, error } = await supabase
+      .from("rr_games")
+      .update({
+        status: "running",
+        started_at: new Date().toISOString(),
+        current_player_id: firstAlive.id,
+        current_index: 0,
+      })
+      .eq("id", currentGame.id)
+      .select()
+      .single();
+
+    if (error) {
+      log("Oyun başlatılamadı: " + error.message);
+      return;
+    }
+
+    currentGame = data;
+    log("Oyun başladı. İlk oyuncu: " + firstAlive.name);
+    cylinderEl.classList.add("spin");
+    setTimeout(() => cylinderEl.classList.remove("spin"), 600);
+    updateRoomUI();
+  }
+
+  function getNextAlivePlayer(currentId) {
+    const alive = players.filter((p) => p.is_alive);
+    if (alive.length === 0) return null;
+    const idx = alive.findIndex((p) => p.id === currentId);
+    if (idx === -1) return alive[0];
+    return alive[(idx + 1) % alive.length];
+  }
+
+  async function pullTrigger() {
+    if (!currentGame || !currentPlayer) return;
+    if (currentGame.status !== "running") return;
+    if (currentGame.current_player_id !== currentPlayer.id) return;
+    if (!currentPlayer.is_alive) return;
+
+    // küçük bir spin animasyonu
+    cylinderEl.classList.add("spin");
+    setTimeout(() => cylinderEl.classList.remove("spin"), 600);
+
+    const pattern = currentGame.cylinder_pattern;
+    const idx = currentGame.current_index;
+    const hit = pattern && pattern[idx] === "1";
+
+    const newIndex = idx + 1;
+
+    if (hit) {
+      log("BANG! " + currentPlayer.name + " vuruldu.");
+      // oyuncuyu öldür + oyunu bitir
+      const { error: pError } = await supabase
+        .from("rr_players")
+        .update({ is_alive: false })
+        .eq("id", currentPlayer.id);
+
+      if (pError) {
+        log("Oyuncu güncellenemedi: " + pError.message);
+      }
+
+      const { data: updatedGame, error: gError } = await supabase
+        .from("rr_games")
+        .update({
+          status: "finished",
+          ended_at: new Date().toISOString(),
+          current_index: newIndex,
+        })
+        .eq("id", currentGame.id)
+        .select()
+        .single();
+
+      if (!gError && updatedGame) {
+        currentGame = updatedGame;
+        updateRoomUI();
+      }
+    } else {
+      log(currentPlayer.name + ": Boş! Kurtuldun.");
+      const next = getNextAlivePlayer(currentPlayer.id);
+      const { data: updatedGame, error } = await supabase
+        .from("rr_games")
+        .update({
+          current_index: newIndex,
+          current_player_id: next ? next.id : currentPlayer.id,
+        })
+        .eq("id", currentGame.id)
+        .select()
+        .single();
+
+      if (!error && updatedGame) {
+        currentGame = updatedGame;
+        updateRoomUI();
+      }
+    }
+  }
+
+  // --- Event bindings ---
+  document.getElementById("create-game-btn").onclick = createGame;
+  document.getElementById("join-game-btn").onclick = joinGameByCode;
+  triggerBtn.onclick = pullTrigger;
+  spinBtn.onclick = () => {
+    cylinderEl.classList.add("spin");
+    setTimeout(() => cylinderEl.classList.remove("spin"), 600);
+    log("Silindir döndürüldü.");
+  };
+
+  // URL'den game parametresi varsa join-code doldur
+  const params = new URLSearchParams(window.location.search);
+  const gameSlug = params.get("game");
+  if (gameSlug) {
+    document.getElementById("join-code").value = gameSlug.toUpperCase();
+  }
+</script>
+</body>
+</html>
