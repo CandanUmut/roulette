@@ -31,6 +31,7 @@
       justify-content: center;
       align-items: stretch;
       min-height: 100vh;
+      overflow-y: auto;
     }
 
     .app {
@@ -48,6 +49,19 @@
       box-shadow: 0 18px 40px rgba(15, 23, 42, 0.9);
       border: 1px solid rgba(75, 85, 99, 0.4);
       backdrop-filter: blur(24px);
+    }
+
+    @keyframes shake {
+      0% { transform: translate(0, 0); }
+      20% { transform: translate(-3px, 2px); }
+      40% { transform: translate(3px, -2px); }
+      60% { transform: translate(-2px, 1px); }
+      80% { transform: translate(2px, -1px); }
+      100% { transform: translate(0, 0); }
+    }
+
+    .card.shake {
+      animation: shake 0.25s linear;
     }
 
     h1 {
@@ -305,6 +319,25 @@
       box-shadow: 0 0 0 4px #020617, inset 0 8px 15px rgba(0, 0, 0, 0.8);
     }
 
+    .muzzle-flash {
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 255, 210, 0.9), rgba(248, 113, 113, 0));
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.12s ease-out;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      mix-blend-mode: screen;
+    }
+
+    .muzzle-flash.active {
+      opacity: 1;
+    }
+
     .trigger-row {
       display: flex;
       flex-wrap: wrap;
@@ -320,6 +353,8 @@
       max-height: 120px;
       overflow-y: auto;
       align-self: stretch;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
     }
 
     .log-line {
@@ -510,6 +545,9 @@
 
       <div class="gun-panel">
         <div class="section-title" id="cylinder-section-title">Silindir</div>
+
+        <div class="muzzle-flash" id="muzzle-flash"></div>
+
         <div class="cylinder" id="cylinder">
           <div class="cylinder-core"></div>
         </div>
@@ -545,7 +583,6 @@
   // TODO: KENDİ PROJE BİLGİLERİNİ YAZ
   const SUPABASE_URL = "https://tkggowekxmnlixwinszl.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrZ2dvd2VreG1ubGl4d2luc3psIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MzI1NjcsImV4cCI6MjA4MDMwODU2N30.y1GSvarl9YyBqMaP8x6SXeD88EJ10gjee4rlr6oLyZg";
-
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   const LS_KEY = "rr_state_v2";
@@ -590,11 +627,13 @@
       logSpin: "Silindir döndürüldü.",
       logHit: (name) => `BANG! ${name} gitti, ruhuna Fatiha.`,
       logReset: "Yeni tur için hazır. Oyuncular bekleniyor.",
+      logEnded: "Oyun bir oyuncu tarafından sonlandırıldı, lobiye dönülüyor.",
       probPrefix: "Sonraki atışta isabet ihtimali:",
       probUnknown: "—",
       btnStartGame: "Oyunu Başlat",
       btnPlayAgain: "Tekrar Oyna (Aynı Oda)",
       btnNewRoom: "Yeni Oda Kur",
+      btnEndGame: "Oyunu Bitir",
     },
     en: {
       title: "Online Russian Roulette",
@@ -630,11 +669,13 @@
       logSpin: "Cylinder spun.",
       logHit: (name) => `BANG! ${name} is gone.`,
       logReset: "Ready for a new round. Waiting for players.",
+      logEnded: "Game was ended by a player, returning to lobby.",
       probPrefix: "Chance to hit on next shot:",
       probUnknown: "—",
       btnStartGame: "Start Game",
       btnPlayAgain: "Play Again (Same Room)",
       btnNewRoom: "Create New Room",
+      btnEndGame: "End Game",
     },
   };
 
@@ -708,7 +749,7 @@
     updateProbability();
   }
 
-  // --- Ses (Web Audio ile, dosyasız) ---
+  // --- Ses (Web Audio) ---
   let audioCtx = null;
   function getAudioCtx() {
     if (!audioCtx) {
@@ -737,7 +778,7 @@
     const ctx = getAudioCtx();
     if (!ctx) return;
 
-    const length = ctx.sampleRate * 0.35; // 350ms
+    const length = ctx.sampleRate * 0.35;
     const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
     const data = buffer.getChannelData(0);
     for (let i = 0; i < length; i++) {
@@ -798,7 +839,8 @@
     div.className = "log-line";
     const time = new Date().toLocaleTimeString();
     div.textContent = `[${time}] ${message}`;
-    logEl.prepend(div);
+    logEl.appendChild(div);
+    logEl.scrollTop = logEl.scrollHeight;
   }
 
   function renderCylinder(pattern) {
@@ -817,7 +859,7 @@
       const hole = document.createElement("div");
       hole.className = "cylinder-hole";
 
-      // Mermi görünmüyor, sadece ateşlenecek yuva (0. indeks) vurgulu
+      // Sadece ateşlenecek yuva (0. indeks) vurgulu, mermi görünmüyor
       if (i === 0) {
         hole.classList.add("current");
       }
@@ -865,6 +907,8 @@
   const cylinderEl = document.getElementById("cylinder");
   const probLabelEl = document.getElementById("prob-label");
   const probFillEl = document.getElementById("prob-fill");
+  const muzzleFlashEl = document.getElementById("muzzle-flash");
+  const cardEl = document.querySelector(".card");
 
   function updateProbability() {
     const t = textMap[currentLang];
@@ -985,8 +1029,20 @@
 
     // status actions
     statusActions.innerHTML = "";
+
+    // Herkes için "Oyunu Bitir / End Game"
+    if (currentGame.status === "waiting" || currentGame.status === "running") {
+      const endBtn = document.createElement("button");
+      endBtn.className = "secondary";
+      endBtn.textContent = t.btnEndGame;
+      endBtn.onclick = endGame;
+      statusActions.appendChild(endBtn);
+    }
+
+    // Sadece kurucu için start / tekrar oyna / yeni oda
     if (isCreator && currentGame.status === "waiting") {
       const btn = document.createElement("button");
+      btn.style.marginLeft = "8px";
       btn.textContent = t.btnStartGame;
       btn.onclick = startGame;
       statusActions.appendChild(btn);
@@ -1016,7 +1072,7 @@
     triggerBtn.disabled = !myTurn;
     spinBtn.disabled = !myTurn;
 
-    // cylinder (mermi görünmüyor, sadece ateşlenecek yuva işaretli)
+    // cylinder
     renderCylinder(currentGame.cylinder_pattern);
     updateProbability();
   }
@@ -1299,6 +1355,14 @@
       // BANG
       playBangSound();
       cylinderEl.classList.add("bang");
+      if (cardEl) {
+        cardEl.classList.add("shake");
+        setTimeout(() => cardEl.classList.remove("shake"), 300);
+      }
+      if (muzzleFlashEl) {
+        muzzleFlashEl.classList.add("active");
+        setTimeout(() => muzzleFlashEl.classList.remove("active"), 180);
+      }
       setTimeout(() => cylinderEl.classList.remove("bang"), 350);
       log(pickRandomMessage("hit", currentPlayer.name));
 
@@ -1392,6 +1456,34 @@
     await fetchPlayers(currentGame.id);
   }
 
+  async function endGame() {
+    if (!currentGame) return;
+
+    const { data, error } = await supabase
+      .from("rr_games")
+      .update({
+        status: "finished",
+        ended_at: new Date().toISOString(),
+      })
+      .eq("id", currentGame.id)
+      .select()
+      .single();
+
+    if (error) {
+      log("Oyun bitirilemedi: " + error.message);
+      return;
+    }
+
+    currentGame = data;
+    log(textMap[currentLang].logEnded);
+    clearLocalState();
+    updateRoomUI();
+
+    setTimeout(() => {
+      window.location.href = window.location.pathname;
+    }, 300);
+  }
+
   async function autoRejoinIfPossible() {
     // URL'de game param varsa join-code'u dolduralım
     const params = new URLSearchParams(window.location.search);
@@ -1410,9 +1502,15 @@
     if (!saved?.gameSlug || !saved?.playerId) return;
 
     const game = await fetchGameBySlug(saved.gameSlug);
+    // Oyun zaten bitmişse auto-rejoin yapma
+    if (!game || game.status === "finished") {
+      clearLocalState();
+      return;
+    }
+
     const player = await fetchPlayerById(saved.playerId);
 
-    if (!game || !player) {
+    if (!player) {
       clearLocalState();
       return;
     }
@@ -1434,7 +1532,7 @@
   document.getElementById("create-game-btn").onclick = createGame;
   document.getElementById("join-game-btn").onclick = joinGameByCode;
   triggerBtn.onclick = () => {
-    getAudioCtx(); // ilk tıklamada AudioContext aktif olsun
+    getAudioCtx();
     pullTrigger();
   };
   spinBtn.onclick = () => {
