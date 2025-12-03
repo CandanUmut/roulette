@@ -430,6 +430,111 @@
       box-shadow: 0 0 12px rgba(250, 204, 21, 0.35);
     }
 
+    .help-btn {
+      font-size: 0.85rem;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(75, 85, 99, 0.8);
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--text-soft);
+      cursor: pointer;
+    }
+
+    .help-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .modal.hidden {
+      display: none;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 50;
+    }
+
+    .modal-content {
+      background: #020617;
+      border-radius: 16px;
+      border: 1px solid rgba(75, 85, 99, 0.8);
+      padding: 16px;
+      max-width: 360px;
+      width: 90%;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8);
+      font-size: 0.85rem;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .modal-close {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: var(--text-soft);
+      font-size: 1rem;
+    }
+
+    .warning-text {
+      color: #f97373;
+      font-weight: 600;
+    }
+
+    .kick-btn {
+      margin-left: 6px;
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(248, 113, 113, 0.9);
+      background: transparent;
+      color: #f97373;
+      cursor: pointer;
+    }
+
+    .scoreboard {
+      margin-top: 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      background: rgba(15, 23, 42, 0.9);
+      padding: 10px 12px;
+      font-size: 0.8rem;
+    }
+
+    .scoreboard.hidden {
+      display: none;
+    }
+
+    .score-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+      border-bottom: 1px dashed rgba(31, 41, 55, 0.7);
+    }
+
+    .score-row:last-child {
+      border-bottom: none;
+    }
+
+    .score-name {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .score-points {
+      font-weight: 600;
+    }
+
     @media (max-width: 768px) {
       .card {
         padding: 16px;
@@ -453,6 +558,7 @@
     <div class="lang-switch">
       <button class="lang-btn active" data-lang="tr">🇹🇷 TR</button>
       <button class="lang-btn" data-lang="en">🇬🇧 EN</button>
+      <button class="help-btn" id="help-btn">?</button>
     </div>
 
     <h1>
@@ -573,6 +679,26 @@
 
         <div class="log" id="log"></div>
       </div>
+
+      <div id="scoreboard" class="scoreboard hidden">
+        <div class="section-title">Skor Tablosu / Scoreboard</div>
+        <div id="scoreboard-body"></div>
+      </div>
+    </div>
+    <!-- How-to-play / warning modal -->
+    <div id="help-modal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span id="help-title"></span>
+          <button id="help-close-btn" class="modal-close">✕</button>
+        </div>
+        <div class="modal-body">
+          <p id="help-line-1"></p>
+          <p id="help-line-2"></p>
+          <p id="help-line-3" class="warning-text"></p>
+          <p id="help-line-4" class="warning-text"></p>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -634,6 +760,18 @@
       btnPlayAgain: "Tekrar Oyna (Aynı Oda)",
       btnNewRoom: "Yeni Oda Kur",
       btnEndGame: "Oyunu Bitir",
+      helpTitle: "Nasıl oynanır & Uyarılar",
+      helpLine1:
+        "Bu oyun sadece eğlence içindir. Gerçek para, bahis veya kumar için KESİNLİKLE kullanmayın.",
+      helpLine2:
+        "Oda kur, kodu paylaş, herkes katılsın. Kurucu oyunu başlatınca silindir dönmeye başlar.",
+      helpLine3:
+        "Kumar yasaktır. Bu uygulama, sorumsuz davranış veya maddi kayıp için kullanılmamalıdır.",
+      helpLine4:
+        "Lütfen bu oyunu sadece arkadaşlarınla, keyif ve sohbet için kullan.",
+      btnScoreboard: "Skor Tablosu",
+      kickLabel: "At",
+      botTag: "Bot",
     },
     en: {
       title: "Online Russian Roulette",
@@ -676,6 +814,18 @@
       btnPlayAgain: "Play Again (Same Room)",
       btnNewRoom: "Create New Room",
       btnEndGame: "End Game",
+      helpTitle: "How to Play & Warnings",
+      helpLine1:
+        "This game is for fun only. NEVER use it for real money, betting, or gambling.",
+      helpLine2:
+        "Create a room, share the code, players join. When the host starts, the cylinder spins.",
+      helpLine3:
+        "Gambling is not allowed. This app must not be used for financial risk or addiction.",
+      helpLine4:
+        "Use this only with friends, for jokes and conversation – nothing serious.",
+      btnScoreboard: "Scoreboard",
+      kickLabel: "Kick",
+      botTag: "Bot",
     },
   };
 
@@ -744,6 +894,15 @@
 
     document.getElementById("btn-trigger-text").textContent = t.btnTrigger;
     document.getElementById("btn-spin-text").textContent = t.btnSpin;
+
+    const helpTitleEl = document.getElementById("help-title");
+    if (helpTitleEl) {
+      helpTitleEl.textContent = t.helpTitle;
+      document.getElementById("help-line-1").textContent = t.helpLine1;
+      document.getElementById("help-line-2").textContent = t.helpLine2;
+      document.getElementById("help-line-3").textContent = t.helpLine3;
+      document.getElementById("help-line-4").textContent = t.helpLine4;
+    }
 
     updateRoomUI();
     updateProbability();
@@ -948,6 +1107,44 @@
     probFillEl.style.width = `${Math.min(100, prob)}%`;
   }
 
+  function renderScoreboard() {
+    const board = document.getElementById("scoreboard-body");
+    if (!board) return;
+
+    const sorted = [...players].sort((a, b) => (b.score || 0) - (a.score || 0));
+
+    board.innerHTML = "";
+    sorted.forEach((p) => {
+      const row = document.createElement("div");
+      row.className = "score-row";
+
+      const left = document.createElement("div");
+      left.className = "score-name";
+      left.textContent = p.name;
+      if (p.is_bot) {
+        const tag = document.createElement("span");
+        tag.className = "player-tag";
+        tag.textContent = textMap[currentLang].botTag;
+        left.appendChild(tag);
+      }
+
+      const right = document.createElement("div");
+      right.className = "score-points";
+      const score = p.score || 0;
+      right.textContent = score > 0 ? `+${score}` : `${score}`;
+
+      row.appendChild(left);
+      row.appendChild(right);
+      board.appendChild(row);
+    });
+  }
+
+  function toggleScoreboard() {
+    const s = document.getElementById("scoreboard");
+    if (!s) return;
+    s.classList.toggle("hidden");
+  }
+
   function updateRoomUI() {
     if (!currentGame) return;
     const t = textMap[currentLang];
@@ -990,6 +1187,12 @@
         creatorTag.textContent = currentLang === "tr" ? "Kurucu" : "Host";
         right.appendChild(creatorTag);
       }
+      if (p.is_bot) {
+        const botTag = document.createElement("span");
+        botTag.className = "player-tag";
+        botTag.textContent = textMap[currentLang].botTag;
+        right.appendChild(botTag);
+      }
       if (currentGame.current_player_id === p.id && currentGame.status === "running") {
         const turnTag = document.createElement("span");
         turnTag.className = "player-tag";
@@ -997,6 +1200,14 @@
         turnTag.style.color = "#facc15";
         turnTag.textContent = currentLang === "tr" ? "Sıra" : "Turn";
         right.appendChild(turnTag);
+      }
+
+      if (isCreator && p.id !== currentPlayer?.id) {
+        const kick = document.createElement("button");
+        kick.className = "kick-btn";
+        kick.textContent = textMap[currentLang].kickLabel;
+        kick.onclick = () => kickPlayer(p.id);
+        right.appendChild(kick);
       }
 
       row.appendChild(left);
@@ -1039,6 +1250,15 @@
       statusActions.appendChild(endBtn);
     }
 
+    if (isCreator && currentGame.status !== "finished") {
+      const addBotBtn = document.createElement("button");
+      addBotBtn.className = "secondary";
+      addBotBtn.style.marginLeft = "8px";
+      addBotBtn.textContent = "🤖 Bot";
+      addBotBtn.onclick = addBot;
+      statusActions.appendChild(addBotBtn);
+    }
+
     // Sadece kurucu için start / tekrar oyna / yeni oda
     if (isCreator && currentGame.status === "waiting") {
       const btn = document.createElement("button");
@@ -1063,11 +1283,24 @@
       statusActions.appendChild(newGame);
     }
 
+    const scoreBtn = document.createElement("button");
+    scoreBtn.className = "secondary";
+    scoreBtn.style.marginLeft = "8px";
+    scoreBtn.textContent = textMap[currentLang].btnScoreboard;
+    scoreBtn.onclick = toggleScoreboard;
+    statusActions.appendChild(scoreBtn);
+
     // trigger / spin buttons
+    const currentTurnPlayer = players.find(
+      (p) => p.id === currentGame.current_player_id
+    );
+    const isBotTurn = currentTurnPlayer?.is_bot === true;
+
     const myTurn =
       currentGame.status === "running" &&
-      currentGame.current_player_id === currentPlayer?.id &&
-      currentPlayer?.is_alive;
+      ((currentGame.current_player_id === currentPlayer?.id &&
+        currentPlayer?.is_alive) ||
+        (isCreator && isBotTurn));
 
     triggerBtn.disabled = !myTurn;
     spinBtn.disabled = !myTurn;
@@ -1075,6 +1308,7 @@
     // cylinder
     renderCylinder(currentGame.cylinder_pattern);
     updateProbability();
+    renderScoreboard();
   }
 
   async function fetchPlayers(gameId) {
@@ -1334,13 +1568,142 @@
     return alive[(idx + 1) % alive.length];
   }
 
+  async function kickPlayer(playerId) {
+    if (!currentGame || !isCreator) return;
+
+    const kicked = players.find((p) => p.id === playerId);
+    if (!kicked) return;
+
+    const { error: delError } = await supabase
+      .from("rr_players")
+      .delete()
+      .eq("id", playerId);
+
+    if (delError) {
+      log("Kick failed: " + delError.message);
+      return;
+    }
+
+    if (currentGame.current_player_id === playerId && currentGame.status === "running") {
+      const remainingAlive = players.filter((p) => p.id !== playerId && p.is_alive);
+      let nextId = null;
+      if (remainingAlive.length >= 1) {
+        const next = getNextAlivePlayer(playerId);
+        nextId = next ? next.id : remainingAlive[0].id;
+      }
+
+      const statusUpdate = remainingAlive.length >= 2 ? "running" : "waiting";
+
+      const { data: updatedGame, error: gError } = await supabase
+        .from("rr_games")
+        .update({
+          current_player_id: nextId,
+          status: statusUpdate,
+        })
+        .eq("id", currentGame.id)
+        .select()
+        .single();
+
+      if (!gError && updatedGame) {
+        currentGame = updatedGame;
+      }
+    }
+
+    await fetchPlayers(currentGame.id);
+    log(
+      currentLang === "tr"
+        ? `${kicked.name} odadan atıldı.`
+        : `${kicked.name} was kicked from the room.`
+    );
+  }
+
+  async function addBot() {
+    if (!currentGame || !isCreator) return;
+
+    const botCount = players.filter((p) => p.is_bot).length;
+    const botName =
+      currentLang === "tr" ? `Bot #${botCount + 1}` : `Bot #${botCount + 1}`;
+
+    const { data: bot, error } = await supabase
+      .from("rr_players")
+      .insert({
+        game_id: currentGame.id,
+        name: botName,
+        is_creator: false,
+        is_alive: true,
+        is_bot: true,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      log("Bot eklenemedi: " + error.message);
+      return;
+    }
+
+    log(
+      currentLang === "tr"
+        ? `${botName} oyuna bot olarak eklendi.`
+        : `${botName} joined as a bot.`
+    );
+
+    await fetchPlayers(currentGame.id);
+  }
+
+  async function updateScoresAfterRound(deadPlayerId) {
+    if (!currentGame) return;
+
+    const { data: currentPlayers, error } = await supabase
+      .from("rr_players")
+      .select("*")
+      .eq("game_id", currentGame.id);
+
+    if (error || !currentPlayers) {
+      log("Skor güncellenemedi: " + (error?.message || ""));
+      return;
+    }
+
+    for (const p of currentPlayers) {
+      let delta = 0;
+      if (p.id === deadPlayerId) {
+        delta = -2;
+      } else if (p.is_alive) {
+        delta = 2;
+      }
+
+      if (delta !== 0) {
+        const { error: uError } = await supabase
+          .from("rr_players")
+          .update({ score: (p.score || 0) + delta })
+          .eq("id", p.id);
+
+        if (uError) {
+          console.log("Score update failed for", p.name, uError.message);
+        }
+      }
+    }
+
+    await fetchPlayers(currentGame.id);
+    renderScoreboard();
+  }
+
   async function pullTrigger() {
     if (!currentGame || !currentPlayer) return;
     if (currentGame.status !== "running") return;
-    if (currentGame.current_player_id !== currentPlayer.id) return;
-    if (!currentPlayer.is_alive) return;
 
     const t = textMap[currentLang];
+
+    const shooter = players.find((p) => p.id === currentGame.current_player_id);
+    if (!shooter || !shooter.is_alive) return;
+
+    const isBotTurn = shooter.is_bot === true;
+    const callerIsShooter = shooter.id === currentPlayer.id;
+
+    const callerCanShoot =
+      (callerIsShooter && currentPlayer.is_alive) ||
+      (isCreator && isBotTurn);
+
+    if (!callerCanShoot) return;
 
     cylinderEl.classList.add("spin");
     playSpinSound();
@@ -1364,12 +1727,12 @@
         setTimeout(() => muzzleFlashEl.classList.remove("active"), 180);
       }
       setTimeout(() => cylinderEl.classList.remove("bang"), 350);
-      log(pickRandomMessage("hit", currentPlayer.name));
+      log(pickRandomMessage("hit", shooter.name));
 
       const { error: pError } = await supabase
         .from("rr_players")
         .update({ is_alive: false })
-        .eq("id", currentPlayer.id);
+        .eq("id", shooter.id);
 
       if (pError) {
         log("Oyuncu güncellenemedi: " + pError.message);
@@ -1389,18 +1752,19 @@
       if (!gError && updatedGame) {
         currentGame = updatedGame;
         updateRoomUI();
+        updateScoresAfterRound(shooter.id);
       }
     } else {
       // Boş
       playClickSound();
-      log(pickRandomMessage("safe", currentPlayer.name));
-      const next = getNextAlivePlayer(currentPlayer.id);
+      log(pickRandomMessage("safe", shooter.name));
+      const next = getNextAlivePlayer(shooter.id);
 
       const { data: updatedGame, error } = await supabase
         .from("rr_games")
         .update({
           current_index: newIndex,
-          current_player_id: next ? next.id : currentPlayer.id,
+          current_player_id: next ? next.id : shooter.id,
         })
         .eq("id", currentGame.id)
         .select()
@@ -1542,6 +1906,24 @@
     setTimeout(() => cylinderEl.classList.remove("spin"), 600);
     log(textMap[currentLang].logSpin);
   };
+
+  const helpBtn = document.getElementById("help-btn");
+  const helpModal = document.getElementById("help-modal");
+  const helpCloseBtn = document.getElementById("help-close-btn");
+
+  if (helpBtn && helpModal && helpCloseBtn) {
+    helpBtn.addEventListener("click", () => {
+      helpModal.classList.remove("hidden");
+    });
+    helpCloseBtn.addEventListener("click", () => {
+      helpModal.classList.add("hidden");
+    });
+    helpModal.addEventListener("click", (e) => {
+      if (e.target === helpModal) {
+        helpModal.classList.add("hidden");
+      }
+    });
+  }
 
   // Dil butonları
   const langButtons = document.querySelectorAll(".lang-btn");
